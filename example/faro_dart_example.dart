@@ -9,6 +9,7 @@ Future<void> main() async {
       var app = App("my-app", "0.0.1", "dev");
 
       options.collectorUrl = Uri.parse('https://your-collector.com/collector');
+      options.apiKey = 'YOUR_API_KEY';
       options.meta = Meta(app: app);
     },
     // Init your App.

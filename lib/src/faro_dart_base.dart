@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:faro_dart/src/faro_settings.dart';
@@ -10,6 +11,7 @@ import 'package:faro_dart/src/model/trace.dart';
 import 'package:faro_dart/src/model/view.dart';
 import 'package:meta/meta.dart';
 import 'package:synchronized/synchronized.dart';
+import 'package:http/http.dart' as http;
 
 import 'model/log.dart';
 import 'model/measurement.dart';
@@ -93,10 +95,6 @@ class Faro {
     instance.ticker = Timer.periodic(interval, (Timer t) => tick);
   }
 
-  void close() {
-    currentSettings.httpClient.close();
-  }
-
   static pushLog(String message) {
     if (!instance.initialized) {
       return;
@@ -174,19 +172,23 @@ class Faro {
       }
 
       try {
-        Uri url = instance.currentSettings.collectorUrl!;
-        HttpClientRequest req =
-            await instance.currentSettings.httpClient.postUrl(url);
-        req.headers.add("User-Agent", userAgent);
-        req.headers.add("Content-Type", "application/json");
-        var json = jsonEncode(instance._payload.toJson());
-        req.write(json);
+        final settings = instance.currentSettings;
 
-        var res = await req.close();
+        final json = jsonEncode(instance._payload.toJson());
+        
+        final response = await http.post(
+          settings.collectorUrl!,
+          headers: {
+            HttpHeaders.contentTypeHeader: 'application/json',
+            HttpHeaders.userAgentHeader: userAgent,
+            if (settings.apiKey != null) 'x-api-key': settings.apiKey!,
+          },
+          body: json,
+        );
 
-        print("${res.statusCode} ${res.reasonPhrase}");
-      } catch (e) {
-        print(e);
+        if (response.statusCode != 202) {
+          log('Failed to send data to Faro collector: ${response.statusCode} ${response.body}');
+        }
       } finally {
         instance._payload = Payload(instance.currentSettings.meta);
       }

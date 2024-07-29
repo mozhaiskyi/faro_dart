@@ -1,10 +1,6 @@
 import 'dart:convert';
 
 import 'package:faro_dart/faro_dart.dart';
-import 'package:faro_dart/src/model/app.dart';
-import 'package:faro_dart/src/model/event.dart';
-import 'package:faro_dart/src/model/meta.dart';
-import 'package:faro_dart/src/model/session.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf_test_handler/shelf_test_handler.dart';
 import 'package:test/test.dart';
