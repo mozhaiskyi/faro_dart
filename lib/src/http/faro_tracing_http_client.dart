@@ -5,11 +5,10 @@ import 'package:convert/convert.dart';
 
 class FaroTracingHttpClient extends BaseClient {
   late Client _client;
-  String serviceName;
   String traceId = "";
   String spanId = "";
 
-  FaroTracingHttpClient(this.serviceName, {Client? client}) {
+  FaroTracingHttpClient({Client? client}) {
     _client = client ?? Client();
   }
 

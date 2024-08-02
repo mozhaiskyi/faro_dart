@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:faro_dart/faro_dart.dart';
 import 'package:faro_dart/src/http/faro_tracing_http_client.dart';
 import 'package:http/http.dart';
@@ -13,9 +11,9 @@ class FaroHttpClient extends BaseClient {
 
   FaroHttpClient(this.serviceName, {Client? client}) {
     if (client != null) {
-      _client = FaroTracingHttpClient(serviceName, client: client);
+      _client = FaroTracingHttpClient(client: client);
     } else {
-      _client = FaroTracingHttpClient(serviceName, client: Client());
+      _client = FaroTracingHttpClient(client: Client());
     }
   }
 
