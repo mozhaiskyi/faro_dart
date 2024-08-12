@@ -19,26 +19,40 @@ class AttributeValue {
   }
 }
 
+class Attribute {
+  String key;
+  AttributeValue value;
+
+  Attribute(this.key, this.value);
+
+  Map<String, dynamic> toJson() {
+    return {
+      "key": key,
+      "value": value.toJson(),
+    };
+  }
+}
+
 class Resource {
-  Map<String, AttributeValue> attributes = {};
+  List<Attribute> attributes = [];
   int droppedAttributesCount = 0;
 
-  Resource.defaultResource(String serviceName) : attributes = {
-    "service.name": AttributeValue.string(serviceName),
-    "telemetry.sdk.language": AttributeValue.string("dart"),
-    "telemetry.sdk.name": AttributeValue.string("faro_flutter"),
-    "telemetry.sdk.version": AttributeValue.string("0.0.1"),
-  };
+  Resource.defaultResource(String serviceName) : attributes = [
+    Attribute("service.name", AttributeValue.string(serviceName)),
+    Attribute("telemetry.sdk.language", AttributeValue.string("dart")),
+    Attribute("telemetry.sdk.name", AttributeValue.string("faro_flutter")),
+    Attribute("telemetry.sdk.version", AttributeValue.string("0.0.1")),
+  ];
 
-  Resource.empty() : attributes = {};
+  Resource.empty() : attributes = [];
 
   Map<String, dynamic> toJson() {
     var returnValue = {
-      "attributes": {},
+      "attributes": [],
     };
 
-    attributes.forEach((k, v) {
-      returnValue[k] = v.toJson();
+    attributes.forEach((a) {
+      returnValue["attributes"]?.add(a.toJson());
     });
 
     return returnValue;
