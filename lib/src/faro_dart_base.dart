@@ -215,4 +215,18 @@ class Faro {
       instance._payload.traces = trace;
     });
   }
+
+  static void setUserAttributes(Map<String, dynamic> attributes) {
+    instance.lock.synchronized(() {
+      if (instance._payload.meta == null) {
+        return;
+      }
+
+      if (instance._payload.meta!.userAttributes == null) {
+        instance._payload.meta!.userAttributes =  Map.from(attributes);
+      } else {
+        instance._payload.meta!.userAttributes!.addAll(attributes);
+      }
+    });
+  }
 }

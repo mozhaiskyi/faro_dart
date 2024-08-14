@@ -12,6 +12,7 @@ class Meta {
   View? view;
   Browser? browser;
   Page? page;
+  Map<String, dynamic>? userAttributes;
 
   Meta({
     this.session,
@@ -20,6 +21,7 @@ class Meta {
     this.view,
     this.browser,
     this.page,
+    this.userAttributes,
   }) {
     session = session ?? Session();
     sdk = sdk ?? Sdk("faro_dart", "0.0.1", []);
@@ -34,6 +36,7 @@ class Meta {
     browser =
         json['browser'] != null ? Browser.fromJson(json['browser']) : null;
     page = json['page'] != null ? Page.fromJson(json['page']) : null;
+    userAttributes = json['userAttributes'];
   }
 
   Map<String, dynamic> toJson() {
@@ -55,6 +58,9 @@ class Meta {
     }
     if (page != null) {
       map['page'] = page!.toJson();
+    }
+    if (userAttributes != null) {
+      map['userAttributes'] = userAttributes;
     }
     return map;
   }
