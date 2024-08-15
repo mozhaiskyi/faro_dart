@@ -223,7 +223,7 @@ class Faro {
       }
 
       if (instance._payload.meta!.userAttributes == null) {
-        instance._payload.meta!.userAttributes =  Map.from(attributes);
+        instance._payload.meta!.userAttributes = attributes;
       } else {
         instance._payload.meta!.userAttributes!.addAll(attributes);
       }
