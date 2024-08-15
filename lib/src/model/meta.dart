@@ -36,7 +36,7 @@ class Meta {
     browser =
         json['browser'] != null ? Browser.fromJson(json['browser']) : null;
     page = json['page'] != null ? Page.fromJson(json['page']) : null;
-    userAttributes = json['userAttributes'];
+    userAttributes = json['user'];
   }
 
   Map<String, dynamic> toJson() {
@@ -60,7 +60,7 @@ class Meta {
       map['page'] = page!.toJson();
     }
     if (userAttributes != null) {
-      map['userAttributes'] = userAttributes;
+      map['user'] = userAttributes;
     }
     return map;
   }
