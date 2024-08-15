@@ -8,6 +8,7 @@ import 'package:faro_dart/src/model/event.dart';
 import 'package:faro_dart/src/model/exception.dart';
 import 'package:faro_dart/src/model/payload.dart';
 import 'package:faro_dart/src/model/trace.dart';
+import 'package:faro_dart/src/model/user.dart';
 import 'package:faro_dart/src/model/view.dart';
 import 'package:meta/meta.dart';
 import 'package:synchronized/synchronized.dart';
@@ -216,17 +217,13 @@ class Faro {
     });
   }
 
-  static void setUserAttributes(Map<String, dynamic> attributes) {
+  static void setUser(User user) {
     instance.lock.synchronized(() {
       if (instance._payload.meta == null) {
         return;
       }
 
-      if (instance._payload.meta!.userAttributes == null) {
-        instance._payload.meta!.userAttributes = attributes;
-      } else {
-        instance._payload.meta!.userAttributes!.addAll(attributes);
-      }
+      instance._payload.meta!.user = user;
     });
   }
 }
