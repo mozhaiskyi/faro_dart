@@ -1,21 +1,15 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:developer';
-import 'dart:io';
 
-import 'package:faro_dart/src/faro_settings.dart';
-import 'package:faro_dart/src/model/event.dart';
+import 'package:faro_dart/faro_dart.dart';
+import 'package:faro_dart/src/faro_remote_collector.dart';
 import 'package:faro_dart/src/model/exception.dart';
 import 'package:faro_dart/src/model/payload.dart';
 import 'package:faro_dart/src/model/trace.dart';
-import 'package:faro_dart/src/model/user.dart';
 import 'package:faro_dart/src/model/view.dart';
 import 'package:meta/meta.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:http/http.dart' as http;
 
 import 'model/log.dart';
-import 'model/measurement.dart';
 
 typedef SettingsConfiguration = FutureOr<void> Function(FaroSettings);
 
@@ -29,22 +23,41 @@ class Faro {
   FaroSettings currentSettings = FaroSettings();
   Timer ticker = Timer(interval, () {});
   Payload _payload = Payload.empty();
-  bool initialized = false;
-
-  @internal
-  set payload(Payload p) {
-    _payload = p;
-  }
+  FaroRemoteCollector _remoteCollector = FaroRemoteCollectorImpl(userAgent: userAgent);
 
   static Faro? _instance;
+
+  @visibleForTesting
+  set remoteCollector(FaroRemoteCollector remoteCollector) {
+    _remoteCollector = remoteCollector;
+  }
 
   static Faro get instance {
     _instance ??= Faro._();
     return _instance!;
   }
 
-  Faro._();
+  Faro._() {
+    Faro.pushEvent(Event("session_started"));
+  }
 
+  /// Setup Faro with a remote collector. This is the recommended way to use Faro.
+  /// 
+  /// Only after calling this method, Faro will start sending data to the collector. 
+  /// Before calling this method, Faro will not send any data remote, but collect it locally.
+  /// 
+  /// [collectorUrl] is the URL of the collector
+  /// [apiKey] is the API key for the collector
+  /// [app] is the app information
+  static void setupRemoteCollection({required String collectorUrl, String? apiKey, App? app}) {
+    final faroSettings = FaroSettings(collectorUrl: Uri.parse(collectorUrl), apiKey: apiKey);
+    faroSettings.meta.app = app;
+
+    instance.currentSettings = faroSettings;
+    instance.ticker = Timer.periodic(interval, (Timer t) => Faro.tick());
+  }
+
+  @Deprecated('Use setupRemoteCollection instead')
   static Future<void> init(SettingsConfiguration settingsConfiguration,
       {AppRunner? appRunner, @internal FaroSettings? settings}) async {
     final faroSettings = settings ?? FaroSettings();
@@ -66,10 +79,9 @@ class Faro {
   }
 
   static _init(FaroSettings settings, AppRunner? appRunner) async {
-    instance.initialized = true;
     instance.currentSettings = settings;
     instance.ticker = Timer.periodic(interval, (Timer t) => Faro.tick());
-    instance.payload = Payload(instance.currentSettings.meta);
+    instance._payload = Payload(instance.currentSettings.meta);
 
     await Faro.pushEvent(Event("session_started"));
     if (appRunner != null) {
@@ -79,68 +91,28 @@ class Faro {
 
   // stop ticking after one more :)
   static pause() async {
-    if (!instance.initialized) {
-      return;
-    }
-
     instance.lock.synchronized(() => tick);
 
     instance.ticker.cancel();
   }
 
   static unpause() async {
-    if (!instance.initialized) {
-      return;
-    }
-
     instance.ticker = Timer.periodic(interval, (Timer t) => tick);
   }
 
   static pushLog(String message) {
-    if (!instance.initialized) {
-      return;
-    }
-
-    if (!instance.ticker.isActive) {
-      return;
-    }
-
     instance._payload.logs.add(Log(message));
   }
 
   static pushEvent(Event event) async {
-    if (!instance.initialized) {
-      return;
-    }
-
-    if (!instance.ticker.isActive) {
-      return;
-    }
-
     instance._payload.events.add(event);
   }
 
   static pushMeasurement(String name, num value) {
-    if (!instance.initialized) {
-      return;
-    }
-
-    if (!instance.ticker.isActive) {
-      return;
-    }
-
     instance._payload.measurements.add(Measurement(name, value));
   }
 
   static pushView(String view) {
-    if (!instance.initialized) {
-      return;
-    }
-
-    if (!instance.ticker.isActive) {
-      return;
-    }
-
     instance.lock.synchronized(() {
       // set view for all events forthcoming
       instance.currentSettings.meta.view = View(view);
@@ -158,10 +130,6 @@ class Faro {
 
   @internal
   static tick() async {
-    if (!instance.initialized) {
-      return;
-    }
-
     await instance.lock.synchronized(() async {
       // bail if no events
       if (instance._payload.events.isEmpty &&
@@ -175,21 +143,7 @@ class Faro {
       try {
         final settings = instance.currentSettings;
 
-        final json = jsonEncode(instance._payload.toJson());
-        
-        final response = await http.post(
-          settings.collectorUrl!,
-          headers: {
-            HttpHeaders.contentTypeHeader: 'application/json',
-            HttpHeaders.userAgentHeader: userAgent,
-            if (settings.apiKey != null) 'x-api-key': settings.apiKey!,
-          },
-          body: json,
-        );
-
-        if (response.statusCode != 202) {
-          log('Failed to send data to Faro collector: ${response.statusCode} ${response.body}');
-        }
+        await instance._remoteCollector.collect(instance._payload, settings);
       } finally {
         instance._payload = Payload(instance.currentSettings.meta);
       }
@@ -219,9 +173,7 @@ class Faro {
 
   static void setUser(User user) {
     instance.lock.synchronized(() {
-      if (instance._payload.meta == null) {
-        return;
-      }
+      instance._payload.meta ??= Meta();
 
       instance._payload.meta!.user = user;
     });

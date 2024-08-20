@@ -21,3 +21,5 @@ dev_dependencies:
   test: ^1.21.0
   shelf: ^1.4.1
   shelf_test_handler: ^2.0.2
+  mockito: ^5.4.4
+  build_runner: ^2.4.11

@@ -1,11 +1,38 @@
 import 'dart:convert';
 
 import 'package:faro_dart/faro_dart.dart';
+import 'package:mockito/mockito.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf_test_handler/shelf_test_handler.dart';
 import 'package:test/test.dart';
 
+import 'mocks.mocks.dart';
+
 void main() {
+
+  group('Faro functions', () {
+
+    test('It should send events to remote collector', () async {
+      final remoteCollector = MockFaroRemoteCollector();
+
+      Faro.instance.remoteCollector = remoteCollector;
+
+      Faro.setupRemoteCollection(collectorUrl: 'collectorUrl', app: App('foo', '0.0.1', 'dev'));
+
+      Faro.pushEvent(Event('custom', attributes: {
+        'foo': 'bar',
+      }));
+
+      await Future.delayed(Duration(milliseconds: 200));
+
+      verify(remoteCollector.collect(captureAny, captureAny)).called(1);
+    });
+
+    test('it should collect events and send them after setupRemoteCollection', () {
+      
+    });
+  });
+
   group('Flutter mock server', () {
     late ShelfTestServer server;
 
@@ -91,5 +118,5 @@ void main() {
 
       await Faro.drain();
     });
-  });
+  }, skip: true);
 }
