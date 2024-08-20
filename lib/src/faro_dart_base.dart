@@ -37,9 +37,7 @@ class Faro {
     return _instance!;
   }
 
-  Faro._() {
-    Faro.pushEvent(Event("session_started"));
-  }
+  Faro._();
 
   /// Setup Faro with a remote collector. This is the recommended way to use Faro.
   /// 
