@@ -37,7 +37,11 @@ class Faro {
     return _instance!;
   }
 
-  Faro._();
+  Faro._() {
+    Future.delayed(Duration(milliseconds: 100), () async {
+      Faro.pushEvent(Event("session_started"));
+    });
+  }
 
   /// Setup Faro with a remote collector. This is the recommended way to use Faro.
   /// 

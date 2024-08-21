@@ -28,8 +28,24 @@ void main() {
       verify(remoteCollector.collect(captureAny, captureAny)).called(1);
     });
 
-    test('it should collect events and send them after setupRemoteCollection', () {
-      
+    test('it should collect events and send them after setupRemoteCollection', () async {
+      final remoteCollector = MockFaroRemoteCollector();
+
+      Faro.instance.remoteCollector = remoteCollector;
+
+      Faro.pushEvent(Event('custom', attributes: {
+        'foo': 'bar',
+      }));
+
+      Faro.pushEvent(Event('custom_1', attributes: {
+        'foo_1': 'bar',
+      }));
+
+      Faro.setupRemoteCollection(collectorUrl: 'collectorUrl', app: App('foo', '0.0.1', 'dev'));
+
+      await Future.delayed(Duration(milliseconds: 200));
+
+      verify(remoteCollector.collect(captureAny, captureAny)).called(1);
     });
   });
 
